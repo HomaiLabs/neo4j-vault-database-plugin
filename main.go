@@ -2,14 +2,18 @@ package neo4j
 
 import (
 	// "log"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/vault/api"
-
 	"github.com/hashicorp/vault/sdk/database/dbplugin/v5"
+	"github.com/hashicorp/vault/sdk/database/helper/dbutil"
 	"github.com/hashicorp/vault/sdk/helper/template"
-	// "context"
-	// "github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 func main() {
@@ -54,6 +58,49 @@ func new() *Neo4j {
 	return &Neo4j{
 		neo4jDBConnectionProducer: connProducer,
 	}
+}
+
+func (m *Neo4j) NewUser(ctx context.Context, req dbplugin.NewUserRequest) (dbplugin.NewUserResponse, error) {
+	if len(req.Statements.Commands) == 0 {
+		return dbplugin.NewUserResponse{}, dbutil.ErrEmptyCreationStatement
+	}
+
+	username, err := m.usernameProducer.Generate(req.UsernameConfig)
+	if err != nil {
+		return dbplugin.NewUserResponse{}, err
+	}
+
+	// Unmarshal statements.CreationStatements into neo4jRoles
+	var neo4jCS neo4jStatement
+	err = json.Unmarshal([]byte(req.Statements.Commands[0]), &neo4jCS)
+	if err != nil {
+		return dbplugin.NewUserResponse{}, err
+	}
+
+	// Default to "admin" if no db provided
+	if neo4jCS.DB == "" {
+		neo4jCS.DB = "admin"
+	}
+
+	if len(neo4jCS.Roles) == 0 {
+		return dbplugin.NewUserResponse{}, fmt.Errorf("roles array is required in creation statement")
+	}
+
+	createUserCmd := createUserCommand{
+		Username: username,
+		Password: req.Password,
+		Roles:    neo4jCS.Roles.toStandardRolesArray(),
+	}
+	var command, params = createUserCmd.transform()
+
+	if err := m.runCommandWithRetry(ctx, command, params); err != nil {
+		return dbplugin.NewUserResponse{}, err
+	}
+
+	resp := dbplugin.NewUserResponse{
+		Username: username,
+	}
+	return resp, nil
 }
 
 // func Run() error {
@@ -105,3 +152,55 @@ func new() *Neo4j {
 // 		db.password: "[password]",
 // 	}
 // }
+
+// runCommandWithRetry runs a command and retries once more if there's a failure
+// on the first attempt. This should be called with the lock held
+func (m *Neo4j) runCommandWithRetry(ctx context.Context, command string, params map[string]any) error {
+	// Get the client
+	client, err := m.Connection(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer client.Close(ctx)
+
+	err = executeWrite(client, ctx, command, params)
+
+	// Error check on the first attempt
+	switch {
+	case err == nil:
+		return nil
+	case err == io.EOF, strings.Contains(err.Error(), "EOF"):
+		// Call getConnection to reset and retry query if we get an EOF error on first attempt.
+		client, err = m.Connection(ctx)
+		if err != nil {
+			return err
+		}
+		err = executeWrite(client, ctx, command, params)
+		if err != nil {
+			return err
+		}
+	default:
+		return err
+	}
+
+	return nil
+}
+
+func executeWrite(client neo4j.SessionWithContext, ctx context.Context, command string, params map[string]any) error {
+	_, err := client.ExecuteWrite(ctx, func(transaction neo4j.ManagedTransaction) (any, error) {
+		result, err := transaction.Run(ctx,
+			command,
+			params)
+		if err != nil {
+			return nil, err
+		}
+
+		if result.Next(ctx) {
+			return result.Record().Values[0], nil
+		}
+
+		return nil, result.Err()
+	})
+	return err
+}
