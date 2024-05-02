@@ -55,3 +55,8 @@ func (roles neo4jRoles) toStandardRolesArray() []interface{} {
 func (c createUserCommand) transform() (string, map[string]any) {
 	return "CREATE OR REPLACE USER $username SET PASSWORD '$password'", map[string]any{"username": c.Username, "password": c.Password}
 }
+
+
+func (c dropUserCommand) transform() (string, map[string]any) {
+	return "DROP USER $username", map[string]any{"username": c.Username}
+}

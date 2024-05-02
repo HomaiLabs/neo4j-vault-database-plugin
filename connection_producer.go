@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/sdk/database/helper/connutil"
+	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-type neo4jDBConnectionProducer struct {
+type neo4jConnectionProducer struct {
 	ConnectionURL string `json:"connection_url" structs:"connection_url" mapstructure:"connection_url"`
 	WriteConcern  string `json:"write_concern" structs:"write_concern" mapstructure:"write_concern"`
 
@@ -32,7 +33,7 @@ type neo4jDBConnectionProducer struct {
 	sync.Mutex
 }
 
-func (c *neo4jDBConnectionProducer) secretValues() map[string]string {
+func (c *neo4jConnectionProducer) secretValues() map[string]string {
 	return map[string]string{
 		c.Password: "[password]",
 	}
@@ -41,7 +42,7 @@ func (c *neo4jDBConnectionProducer) secretValues() map[string]string {
 // Connection creates or returns an existing a database connection. If the session fails
 // on a ping check, the session will be closed and then re-created.
 // This method does locks the mutex on its own.
-func (c *neo4jDBConnectionProducer) Connection(ctx context.Context) (neo4j.SessionWithContext, error) {
+func (c *neo4jConnectionProducer) Connection(ctx context.Context) (neo4j.SessionWithContext, error) {
 	if !c.Initialized {
 		return nil, connutil.ErrNotInitialized
 	}
@@ -65,7 +66,7 @@ func (c *neo4jDBConnectionProducer) Connection(ctx context.Context) (neo4j.Sessi
 	return c.client.NewSession(ctx, c.clientOptions), nil
 }
 
-func (c *neo4jDBConnectionProducer) createClient(ctx context.Context) (neo4j.DriverWithContext, error) {
+func (c *neo4jConnectionProducer) createClient(ctx context.Context) (neo4j.DriverWithContext, error) {
 	if !c.Initialized {
 		return nil, fmt.Errorf("failed to create client: connection producer is not initialized")
 	}
@@ -79,7 +80,7 @@ func (c *neo4jDBConnectionProducer) createClient(ctx context.Context) (neo4j.Dri
 }
 
 // Close terminates the database connection.
-func (c *neo4jDBConnectionProducer) Close() error {
+func (c *neo4jConnectionProducer) Close() error {
 	c.Lock()
 	defer c.Unlock()
 
@@ -92,6 +93,40 @@ func (c *neo4jDBConnectionProducer) Close() error {
 	}
 
 	c.client = nil
+
+	return nil
+}
+func (c *neo4jConnectionProducer) makeClientOpts() (neo4j.SessionConfig, error) {
+	// TODO implement other parameters
+	return neo4j.SessionConfig{DatabaseName: "neo4j"}, nil
+}
+
+func (c *neo4jConnectionProducer) loadConfig(cfg map[string]interface{}) error {
+	err := mapstructure.WeakDecode(cfg, c)
+	if err != nil {
+		return err
+	}
+
+	if len(c.ConnectionURL) == 0 {
+		return fmt.Errorf("connection_url cannot be empty")
+	}
+
+	if c.SocketTimeout < 0 {
+		return fmt.Errorf("socket_timeout must be >= 0")
+	}
+	if c.ConnectTimeout < 0 {
+		return fmt.Errorf("connect_timeout must be >= 0")
+	}
+	if c.ServerSelectionTimeout < 0 {
+		return fmt.Errorf("server_selection_timeout must be >= 0")
+	}
+
+	opts, err := c.makeClientOpts()
+	if err != nil {
+		return err
+	}
+
+	c.clientOptions = opts
 
 	return nil
 }

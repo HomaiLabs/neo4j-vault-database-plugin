@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hashicorp/go-secure-stdlib/strutil"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/sdk/database/dbplugin/v5"
 	"github.com/hashicorp/vault/sdk/database/helper/dbutil"
@@ -29,20 +30,20 @@ func main() {
 }
 
 const (
-	neo4jDBTypeName = "neo4j"
+	neo4jTypeName = "neo4j"
 
 	defaultUserNameTemplate = `{{ printf "v-%s-%s-%s-%s" (.DisplayName | truncate 15) (.RoleName | truncate 15) (random 20) (unix_time) | replace "." "-" | truncate 100 }}`
 )
 
 type Neo4j struct {
-	*neo4jDBConnectionProducer
+	*neo4jConnectionProducer
 
 	usernameProducer template.StringTemplate
 }
 
 var _ dbplugin.Database = &Neo4j{}
 
-// New returns a new MongoDB instance
+// New returns a new neo4j instance
 
 func New() (interface{}, error) {
 	db := new()
@@ -51,13 +52,72 @@ func New() (interface{}, error) {
 }
 
 func new() *Neo4j {
-	connProducer := &neo4jDBConnectionProducer{
-		Type: neo4jDBTypeName, // TODO not sure if this is needed
+	connProducer := &neo4jConnectionProducer{
+		Type: neo4jTypeName,
 	}
 
 	return &Neo4j{
-		neo4jDBConnectionProducer: connProducer,
+		neo4jConnectionProducer: connProducer,
 	}
+}
+
+// Type returns the TypeName for this backend
+func (m *Neo4j) Type() (string, error) {
+	return neo4jTypeName, nil
+}
+
+func (m *Neo4j) Initialize(ctx context.Context, req dbplugin.InitializeRequest) (dbplugin.InitializeResponse, error) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.RawConfig = req.Config
+
+	usernameTemplate, err := strutil.GetString(req.Config, "username_template")
+	if err != nil {
+		return dbplugin.InitializeResponse{}, fmt.Errorf("failed to retrieve username_template: %w", err)
+	}
+	if usernameTemplate == "" {
+		usernameTemplate = defaultUserNameTemplate
+	}
+
+	up, err := template.NewTemplate(template.Template(usernameTemplate))
+	if err != nil {
+		return dbplugin.InitializeResponse{}, fmt.Errorf("unable to initialize username template: %w", err)
+	}
+	m.usernameProducer = up
+
+	_, err = m.usernameProducer.Generate(dbplugin.UsernameMetadata{})
+	if err != nil {
+		return dbplugin.InitializeResponse{}, fmt.Errorf("invalid username template: %w", err)
+	}
+
+	err = m.neo4jConnectionProducer.loadConfig(req.Config)
+	if err != nil {
+		return dbplugin.InitializeResponse{}, err
+	}
+
+	// Set initialized to true at this point since all fields are set,
+	// and the connection can be established at a later time.
+	m.Initialized = true
+
+	if req.VerifyConnection {
+		client, err := m.neo4jConnectionProducer.createClient(ctx)
+		if err != nil {
+			return dbplugin.InitializeResponse{}, fmt.Errorf("failed to verify connection: %w", err)
+		}
+
+		err = client.VerifyConnectivity(ctx)
+		if err != nil {
+			_ = client.Close(ctx) // Try to prevent any sort of resource leak
+			return dbplugin.InitializeResponse{}, fmt.Errorf("failed to verify connection: %w", err)
+		}
+		m.neo4jConnectionProducer.client = client
+	}
+
+	resp := dbplugin.InitializeResponse{
+		Config: req.Config,
+	}
+	return resp, nil
 }
 
 func (m *Neo4j) NewUser(ctx context.Context, req dbplugin.NewUserRequest) (dbplugin.NewUserResponse, error) {
@@ -103,55 +163,16 @@ func (m *Neo4j) NewUser(ctx context.Context, req dbplugin.NewUserRequest) (dbplu
 	return resp, nil
 }
 
-// func Run() error {
-// 	ctx := context.Background()
-// 	// URI examples: "neo4j://localhost", "neo4j+s://xxx.databases.neo4j.io"
-// 	dbUri := "<URI for Neo4j database>"
-// 	dbUser := "<Username>"
-// 	dbPassword := "<Password>"
-// 	driver, err := neo4j.NewDriverWithContext(
-// 		dbUri,
-// 		neo4j.BasicAuth(dbUser, dbPassword, ""))
-// 	defer driver.Close(ctx)
-
-// 	err = driver.VerifyConnectivity(ctx)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	return nil
-// }
-
-// func New() (interface{}, error) {
-// 	// db, err := newDatabase()
-// 	// if err != nil {
-// 	// 	return nil, err
-// 	// }
-
-// 	// This middleware isn't strictly required, but highly recommended to prevent accidentally exposing
-// 	// values such as passwords in error messages. An example of this is included below
-// 	// db = dbplugin.NewDatabaseErrorSanitizerMiddleware(db, db.secretValues)
-// 	return nil, nil
-// }
-
-// type MyDatabase struct {
-// 	// Variables for the database
-// 	password string
-// }
-
-// func newDatabase() (MyDatabase, error) {
-// 	// ...
-// 	db := &MyDatabase{
-// 		// ...
-// 	}
-// 	return db, nil
-// }
-
-// func (db *MyDatabase) secretValues() map[string]string {
-// 	return map[string]string{
-// 		db.password: "[password]",
-// 	}
-// }
+func (m *Neo4j) DeleteUser(ctx context.Context, req dbplugin.DeleteUserRequest) (dbplugin.DeleteUserResponse, error) {
+	dropUserCommand := dropUserCommand{
+		Username: req.Username,
+	}
+	var command, params = dropUserCommand.transform()
+	if err := m.runCommandWithRetry(ctx, command, params); err != nil {
+		return dbplugin.DeleteUserResponse{}, err
+	}
+	return dbplugin.DeleteUserResponse{}, nil
+}
 
 // runCommandWithRetry runs a command and retries once more if there's a failure
 // on the first attempt. This should be called with the lock held
