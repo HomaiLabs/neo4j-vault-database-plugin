@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/sdk/database/helper/connutil"
+	"github.com/hashicorp/vault/sdk/database/helper/dbutil"
 	"github.com/mitchellh/mapstructure"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
@@ -37,6 +38,14 @@ func (c *neo4jConnectionProducer) secretValues() map[string]string {
 	return map[string]string{
 		c.Password: "[password]",
 	}
+}
+
+func (c *neo4jConnectionProducer) getConnectionURL() (connURL string) {
+	connURL = dbutil.QueryHelper(c.ConnectionURL, map[string]string{
+		"username": c.Username,
+		"password": c.Password,
+	})
+	return connURL
 }
 
 // Connection creates or returns an existing a database connection. If the session fails

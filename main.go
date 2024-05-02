@@ -174,6 +174,26 @@ func (m *Neo4j) DeleteUser(ctx context.Context, req dbplugin.DeleteUserRequest) 
 	return dbplugin.DeleteUserResponse{}, nil
 }
 
+func (m *Neo4j) UpdateUser(ctx context.Context, req dbplugin.UpdateUserRequest) (dbplugin.UpdateUserResponse, error) {
+	if req.Password != nil {
+		err := m.changeUserPassword(ctx, req.Username, req.Password.NewPassword)
+		return dbplugin.UpdateUserResponse{}, err
+	}
+	return dbplugin.UpdateUserResponse{}, nil
+}
+
+func (m *Neo4j) changeUserPassword(ctx context.Context, username, password string) error {
+
+	// Currently doesn't support custom statements for changing the user's password
+	changeUserCmd := &updateUserCommand{
+		Username: username,
+		Password: password,
+	}
+
+	var command, params = changeUserCmd.transform()
+	return m.runCommandWithRetry(ctx, command, params)
+}
+
 // runCommandWithRetry runs a command and retries once more if there's a failure
 // on the first attempt. This should be called with the lock held
 func (m *Neo4j) runCommandWithRetry(ctx context.Context, command string, params map[string]any) error {
