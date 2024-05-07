@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 
 	"github.com/hashicorp/go-secure-stdlib/strutil"
@@ -37,6 +38,7 @@ var (
 // New returns a new neo4j instance
 
 func New() (interface{}, error) {
+	log.Println("Running neo4j databse plugin")
 	db := new()
 	dbType := dbplugin.NewDatabaseErrorSanitizerMiddleware(db, db.secretValues)
 	return dbType, nil
@@ -58,6 +60,7 @@ func (m *Neo4j) Type() (string, error) {
 }
 
 func (p *Neo4j) PluginVersion() logical.PluginVersion {
+	log.Println("Reading plugin version")
 	return logical.PluginVersion{Version: ReportedVersion}
 }
 
