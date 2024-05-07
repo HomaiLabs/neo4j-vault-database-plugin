@@ -11,10 +11,9 @@ import (
 	"github.com/hashicorp/vault/sdk/database/dbplugin/v5"
 	"github.com/hashicorp/vault/sdk/database/helper/dbutil"
 	"github.com/hashicorp/vault/sdk/helper/template"
+	"github.com/hashicorp/vault/sdk/logical"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
-
-
 
 const (
 	neo4jTypeName = "neo4j"
@@ -28,7 +27,12 @@ type Neo4j struct {
 	usernameProducer template.StringTemplate
 }
 
-var _ dbplugin.Database = &Neo4j{}
+var (
+	_ dbplugin.Database       = &Neo4j{}
+	_ logical.PluginVersioner = (*Neo4j)(nil)
+	// ReportedVersion is used to report a specific version to Vault.
+	ReportedVersion = "v1.0.0-beta"
+)
 
 // New returns a new neo4j instance
 
@@ -51,6 +55,10 @@ func new() *Neo4j {
 // Type returns the TypeName for this backend
 func (m *Neo4j) Type() (string, error) {
 	return neo4jTypeName, nil
+}
+
+func (p *Neo4j) PluginVersion() logical.PluginVersion {
+	return logical.PluginVersion{Version: ReportedVersion}
 }
 
 func (m *Neo4j) Initialize(ctx context.Context, req dbplugin.InitializeRequest) (dbplugin.InitializeResponse, error) {
