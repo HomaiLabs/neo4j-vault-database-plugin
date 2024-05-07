@@ -1,4 +1,4 @@
-module neo4j-vault-database-plugin
+module github.com/HomaiLabs/neo4j-vault-database-plugin
 
 go 1.22.2
 
