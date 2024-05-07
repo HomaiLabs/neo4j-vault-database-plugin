@@ -1,6 +1,6 @@
 module github.com/HomaiLabs/neo4j-vault-database-plugin
 
-go 1.22.2
+go 1.21
 
 require (
 	github.com/hashicorp/go-secure-stdlib/strutil v0.1.2
