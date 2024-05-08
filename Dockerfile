@@ -1,4 +1,4 @@
-FROM golang as builder
+FROM golang:1.21 as builder
 LABEL org.opencontainers.image.authors="dev@homai.io"
 
 WORKDIR /build
