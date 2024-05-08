@@ -25,7 +25,7 @@ import (
 	// "go.mongodb.org/mongo-driver/mongo"
 	// "go.mongodb.org/mongo-driver/mongo/options"
 	// "go.mongodb.org/mongo-driver/mongo/readpref"
-	// neo4jDB "github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	neo4jDB "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
 const (
@@ -42,6 +42,8 @@ func TestNeo4j_Initialize(t *testing.T) {
 
 	config := map[string]interface{}{
 		"connection_url": connURL,
+		"username": neo4j.Neo4jUsername,
+		"password": neo4j.Neo4jPassword,
 	}
 	
 
@@ -181,6 +183,8 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 			initReq := dbplugin.InitializeRequest{
 				Config: map[string]interface{}{
 					"connection_url":    connURL,
+					"username": neo4j.Neo4jUsername,
+					"password": neo4j.Neo4jPassword,
 					"username_template": test.usernameTemplate,
 				},
 				VerifyConnection: true,
@@ -192,7 +196,11 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 			require.NoError(t, err)
 			require.Regexp(t, test.expectedUsernameRegex, newUserResp.Username)
 
-			// assertCredsExist(t, newUserResp.Username, test.newUserReq.Password, connURL)
+			// err = assertCredsExist(t, newUserResp.Username, test.newUserReq.Password, connURL)
+			// if err != nil {
+			// 	t.Fatalf(err.Error())
+			// }
+
 		})
 	}
 }
@@ -512,22 +520,31 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 // 	assertCredsExist(t, username, password, connURL)
 // }
 
-// func assertCredsExist(t testing.TB, username, password, connURL string) {
-// 	t.Helper()
+func assertCredsExist(t testing.TB, username, password, connURL string) error{
+	t.Helper()
 
-// 	connURL = strings.Replace(connURL, "mongodb://", fmt.Sprintf("mongodb://%s:%s@", username, password), 1)
+	
+	var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
+	
+	client, err := neo4jDB.NewDriverWithContext(connURL, neo4jDB.BasicAuth(username, password, ""))
 
-// 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-// 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connURL))
-// 	if err != nil {
-// 		t.Fatalf("Failed to connect to mongo: %s", err)
-// 	}
+	if err != nil {
+		t.Error(err.Error())
+	}
 
-// 	err = client.Ping(ctx, readpref.Primary())
-// 	if err != nil {
-// 		t.Fatalf("Failed to ping mongo with user %q: %s", username, err)
-// 	}
-// }
+	
+	err = client.VerifyConnectivity(ctx)
+	
+	if err != nil {
+		_ = client.Close(ctx) // Try to prevent any sort of resource leak
+		return err
+	}
+
+	if err = client.Close(ctx); err != nil {
+		return err
+	}
+	return nil
+}
 
 // func assertCredsDoNotExist(t testing.TB, username, password, connURL string) {
 // 	t.Helper()
