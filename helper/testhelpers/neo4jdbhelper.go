@@ -16,7 +16,7 @@ import (
 
 const (
 	Neo4jUsername = "neo4j"
-	Neo4jPassword = "neo4j"
+	Neo4jPassword = "a_secure_password"
 )
 // PrepareTestContainer calls PrepareTestContainerWithDatabase without a
 // database name value, which results in configuring a database named "test"
@@ -36,7 +36,7 @@ func PrepareTestContainerWithDatabase(t *testing.T, version, dbName string) (fun
 		ImageRepo:     "docker.io/library/neo4j",
 		ImageTag:      version,
 		Ports:         []string{"7687/tcp"},
-		Env: 		   []string{fmt.Sprintf("'NEO4J_AUTH=%s/%s'", Neo4jUsername, Neo4jPassword)},		
+		Env: 		   []string{fmt.Sprintf("NEO4J_AUTH=%s/%s", Neo4jUsername, Neo4jPassword)},
 	})
 	if err != nil {
 		t.Fatalf("could not start docker neo4j: %s", err)
@@ -50,7 +50,7 @@ func PrepareTestContainerWithDatabase(t *testing.T, version, dbName string) (fun
 
 		ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
 		
-		client, err := neo4j.NewDriverWithContext(connURL, neo4j.BasicAuth(Neo4jUsername, Neo4jUsername, ""))
+		client, err := neo4j.NewDriverWithContext(connURL, neo4j.BasicAuth(Neo4jUsername, Neo4jPassword, ""))
 
 		if err != nil {
 			return nil, err
