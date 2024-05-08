@@ -196,22 +196,13 @@ func TestNeo4j_CreateUser(t *testing.T) {
 		VerifyConnection: true,
 	}
 	dbtesting.AssertInitialize(t, db, initReq)
-
 	password := "myreallysecurepassword"
-	createReq := dbplugin.NewUserRequest{
-		UsernameConfig: dbplugin.UsernameMetadata{
-			DisplayName: "test",
-			RoleName:    "test",
-		},
-		Statements: dbplugin.Statements{
-			Commands: []string{neo4jAdminRole},
-		},
-		Password:   password,
-		Expiration: time.Now().Add(time.Minute),
+	username := "atestuser"
+	createResp := createDBUser(t, db, username, password)
+	err := assertCredsExist(t, createResp.Username, password, connURL)
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
-	createResp := dbtesting.AssertNewUser(t, db, createReq)
-
-	assertCredsExist(t, createResp.Username, password, connURL)
 }
 
 
@@ -231,22 +222,13 @@ func TestNeo4j_DeleteUser(t *testing.T) {
 		VerifyConnection: true,
 	}
 	dbtesting.AssertInitialize(t, db, initReq)
-
 	password := "myreallysecurepassword"
-	createReq := dbplugin.NewUserRequest{
-		UsernameConfig: dbplugin.UsernameMetadata{
-			DisplayName: "test",
-			RoleName:    "test",
-		},
-		Statements: dbplugin.Statements{
-			Commands: []string{neo4jAdminRole},
-		},
-		Password:   password,
-		Expiration: time.Now().Add(time.Minute),
+	username := "atestuser"
+	createResp := createDBUser(t, db, username, password)
+	err := assertCredsExist(t, createResp.Username, password, connURL)
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
-	createResp := dbtesting.AssertNewUser(t, db, createReq)
-	assertCredsExist(t, createResp.Username, password, connURL)
-
 	// Test default revocation statement
 	delReq := dbplugin.DeleteUserRequest{
 		Username: createResp.Username,
@@ -254,44 +236,53 @@ func TestNeo4j_DeleteUser(t *testing.T) {
 
 	dbtesting.AssertDeleteUser(t, db, delReq)
 
-	assertCredsDoNotExist(t, createResp.Username, password, connURL)
+	err = assertCredsDoNotExist(t, createResp.Username, password, connURL)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
 }
 
-// func TestNeo4j_UpdateUser_Password(t *testing.T) {
-// 	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
-// 	defer cleanup()
+func TestNeo4j_UpdateUser_Password(t *testing.T) {
+	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	defer cleanup()
 
 	
-// 	db := new()
-// 	defer dbtesting.AssertClose(t, db)
+	db := new()
+	defer dbtesting.AssertClose(t, db)
 
-// 	initReq := dbplugin.InitializeRequest{
-// 		Config: map[string]interface{}{
-// 			"connection_url": connURL,
-// 			"username": neo4j.Neo4jUsername,
-// 			"password": neo4j.Neo4jPassword,
-// 		},
-// 		VerifyConnection: true,
-// 	}
-// 	dbtesting.AssertInitialize(t, db, initReq)
+	initReq := dbplugin.InitializeRequest{
+		Config: map[string]interface{}{
+			"connection_url": connURL,
+			"username": neo4j.Neo4jUsername,
+			"password": neo4j.Neo4jPassword,
+		},
+		VerifyConnection: true,
+	}
+	dbtesting.AssertInitialize(t, db, initReq)
 
-// 	// create the database user in advance, and test the connection
-// 	dbUser := "testmongouser"
-// 	startingPassword := "password"
-// 	createDBUser(t, connURL, "test", dbUser, startingPassword)
+	// create the database user in advance, and test the connection
+	dbUser := "testneo4jouser"
+	startingPassword := "myfirstpassword"
+	createResp := createDBUser(t, db, dbUser, startingPassword)
+	err := assertCredsExist(t, createResp.Username, startingPassword, connURL)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	newPassword := "myreallysecurecredentials"
 
-// 	newPassword := "myreallysecurecredentials"
+	updateReq := dbplugin.UpdateUserRequest{
+		Username: createResp.Username,
+		Password: &dbplugin.ChangePassword{
+			NewPassword: newPassword,
+		},
+	}
+	dbtesting.AssertUpdateUser(t, db, updateReq)
 
-// 	updateReq := dbplugin.UpdateUserRequest{
-// 		Username: dbUser,
-// 		Password: &dbplugin.ChangePassword{
-// 			NewPassword: newPassword,
-// 		},
-// 	}
-// 	dbtesting.AssertUpdateUser(t, db, updateReq)
-
-// 	assertCredsExist(t, dbUser, newPassword, connURL)
-// }
+	err = assertCredsExist(t, createResp.Username, newPassword, connURL)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+}
 
 // func TestMongoDB_RotateRoot_NonAdminDB(t *testing.T) {
 // 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
@@ -444,29 +435,24 @@ func TestNeo4j_DeleteUser(t *testing.T) {
 // 	}
 // }
 
-// func createDBUser(t testing.TB, connURL, db, username, password string) {
-// 	t.Helper()
-
-// 	var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
+func createDBUser(t *testing.T, db *Neo4j, username string, password string) dbplugin.NewUserResponse {
 	
-// 	client, err := neo4jDB.NewDriverWithContext(connURL, neo4jDB.BasicAuth(username, password, ""))
 
-// 	if err != nil {
-// 		t.Error(err.Error())
-// 	}
-
-// 	createUserCmd := &createUserCommand{
-// 		Username: username,
-// 		Password: password,
-// 		Roles:    []interface{}{},
-// 	}
-// 	result := client..ExecuteWrite() RunCommand(ctx, createUserCmd, nil)
-// 	if result.Err() != nil {
-// 		t.Fatalf("failed to create user in mongodb: %s", result.Err())
-// 	}
-
-// 	assertCredsExist(t, username, password, connURL)
-// }
+	
+	createReq := dbplugin.NewUserRequest{
+		UsernameConfig: dbplugin.UsernameMetadata{
+			DisplayName: username,
+			RoleName:    username,
+		},
+		Statements: dbplugin.Statements{
+			Commands: []string{neo4jAdminRole},
+		},
+		Password:   password,
+		Expiration: time.Now().Add(time.Minute),
+	}
+	createResp := dbtesting.AssertNewUser(t, db, createReq)
+	return createResp
+}
 
 func assertCredsExist(t testing.TB, username, password, connURL string) error{
 	t.Helper()
@@ -495,21 +481,6 @@ func assertCredsExist(t testing.TB, username, password, connURL string) error{
 }
 
 func assertCredsDoNotExist(t testing.TB, username, password, connURL string) error {
-	// t.Helper()
-
-	// connURL = strings.Replace(connURL, "mongodb://", fmt.Sprintf("mongodb://%s:%s@", username, password), 1)
-
-	// ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	// client, err := mongo.Connect(ctx, options.Client().ApplyURI(connURL))
-	// if err != nil {
-	// 	return // Creds don't exist as expected
-	// }
-
-	// err = client.Ping(ctx, readpref.Primary())
-	// if err != nil {
-	// 	return // Creds don't exist as expected
-	// }
-	// 
 	t.Helper()
 
 	

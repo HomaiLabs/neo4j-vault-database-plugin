@@ -62,5 +62,5 @@ func (c dropUserCommand) transform() (string, map[string]any) {
 }
 
 func (c updateUserCommand) transform() (string, map[string]any) {
-	return "ALTER USER $username SET  PASSWORD '$password'" , map[string]any{"username": c.Username, "password": c.Password}
+	return "ALTER USER $username SET  PASSWORD $password" , map[string]any{"username": c.Username, "password": c.Password}
 }
