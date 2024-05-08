@@ -22,9 +22,7 @@ import (
 	dbplugin "github.com/hashicorp/vault/sdk/database/dbplugin/v5"
 	dbtesting "github.com/hashicorp/vault/sdk/database/dbplugin/v5/testing"
 	"github.com/stretchr/testify/require"
-	// "go.mongodb.org/mongo-driver/mongo"
-	// "go.mongodb.org/mongo-driver/mongo/options"
-	// "go.mongodb.org/mongo-driver/mongo/readpref"
+
 	neo4jDB "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -284,38 +282,8 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 	}
 }
 
-// func TestMongoDB_RotateRoot_NonAdminDB(t *testing.T) {
-// 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
-// 	defer cleanup()
 
-// 	connURL = connURL + "/test?authSource=test"
-// 	db := new()
-// 	defer dbtesting.AssertClose(t, db)
-
-// 	initReq := dbplugin.InitializeRequest{
-// 		Config: map[string]interface{}{
-// 			"connection_url": connURL,
-// 		},
-// 		VerifyConnection: true,
-// 	}
-// 	dbtesting.AssertInitialize(t, db, initReq)
-
-// 	dbUser := "testmongouser"
-// 	startingPassword := "password"
-// 	createDBUser(t, connURL, "test", dbUser, startingPassword)
-
-// 	newPassword := "myreallysecurecredentials"
-
-// 	updateReq := dbplugin.UpdateUserRequest{
-// 		Username: dbUser,
-// 		Password: &dbplugin.ChangePassword{
-// 			NewPassword: newPassword,
-// 		},
-// 	}
-// 	dbtesting.AssertUpdateUser(t, db, updateReq)
-
-// 	assertCredsExist(t, dbUser, newPassword, connURL)
-// }
+// TODO uncomment this test 
 
 // func TestGetTLSAuth(t *testing.T) {
 // 	ca := certhelpers.NewCert(t,
@@ -333,7 +301,7 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 // 		tlsCAData  []byte
 // 		tlsKeyData []byte
 
-// 		expectOpts *options.ClientOptions
+// 		expectOpts *neo4jDB.SessionConfig
 // 		expectErr  bool
 // 	}
 
@@ -425,8 +393,8 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 // 	cmp.AllowUnexported(x509.CertPool{}),
 // }
 
-// // Need a special comparison for ClientOptions because reflect.DeepEquals won't work in Go 1.16.
-// // See: https://github.com/golang/go/issues/45891
+// Need a special comparison for ClientOptions because reflect.DeepEquals won't work in Go 1.16.
+// See: https://github.com/golang/go/issues/45891
 // func assertDeepEqual(t *testing.T, a, b *options.ClientOptions) {
 // 	t.Helper()
 
