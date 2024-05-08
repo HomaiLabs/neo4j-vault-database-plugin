@@ -66,28 +66,6 @@ func TestNeo4j_Initialize(t *testing.T) {
 	}
 }
 
-// func Test_connect(t *testing.T) {
-// 	   var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
-		
-// 		client, err := neo4jDB.NewDriverWithContext("bolt://127.0.0.1:55167/default", neo4jDB.BasicAuth("ignored", "ignored", ""))
-
-// 		if err != nil {
-// 			t.Error(err.Error())
-// 		}
-
-// 		println(client)
-// 		println(ctx)
-// 		err = client.VerifyConnectivity(ctx)
-		
-// 		if err != nil {
-// 			_ = client.Close(ctx) // Try to prevent any sort of resource leak
-// 			t.Fatal(err)
-// 		}
-
-// 		if err = client.Close(ctx); err != nil {
-// 			t.Fatal(err)
-// 		}
-// }
 
 func TestNewUser_usernameTemplate(t *testing.T) {
 	type testCase struct {
@@ -173,9 +151,6 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 			cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
 			defer cleanup()
 
-			if name == "admin in test database username template" {
-				connURL = connURL + "/test?authSource=test"
-			}
 
 			db := new()
 			defer dbtesting.AssertClose(t, db)
@@ -196,10 +171,10 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 			require.NoError(t, err)
 			require.Regexp(t, test.expectedUsernameRegex, newUserResp.Username)
 
-			// err = assertCredsExist(t, newUserResp.Username, test.newUserReq.Password, connURL)
-			// if err != nil {
-			// 	t.Fatalf(err.Error())
-			// }
+			err = assertCredsExist(t, newUserResp.Username, test.newUserReq.Password, connURL)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
 
 		})
 	}
