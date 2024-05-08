@@ -16,7 +16,7 @@ func main() {
 	}
 }
 
-// Run instantiates a MongoDB object, and runs the RPC server for the plugin
+// Run instantiates a Neo4j object, and runs the RPC server for the plugin
 func Run() error {
 	dbplugin.ServeMultiplex(neo4j.New)
 
