@@ -4,7 +4,7 @@
 package neo4j
 
 import (
-	// "context"
+	"context"
 	// "crypto/tls"
 	// "crypto/x509"
 	// "fmt"
@@ -13,7 +13,7 @@ import (
 	// "strings"
 	// "sync"
 	"testing"
-	// "time"
+	"time"
 
 	// "github.com/google/go-cmp/cmp"
 	// "github.com/google/go-cmp/cmp/cmpopts"
@@ -21,14 +21,17 @@ import (
 	"github.com/HomaiLabs/neo4j-vault-database-plugin/helper/testhelpers"
 	dbplugin "github.com/hashicorp/vault/sdk/database/dbplugin/v5"
 	dbtesting "github.com/hashicorp/vault/sdk/database/dbplugin/v5/testing"
-	// "github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require"
 	// "go.mongodb.org/mongo-driver/mongo"
 	// "go.mongodb.org/mongo-driver/mongo/options"
 	// "go.mongodb.org/mongo-driver/mongo/readpref"
 	// neo4jDB "github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
-
+const (
+	neo4jAdminRole       = `{ "db": "admin", "roles": [ { "role": "readWrite" } ] }`
+	neo4jTestDBAdminRole = `{ "db": "test", "roles": [ { "role": "readWrite" } ] }`
+)
 
 func TestNeo4j_Initialize(t *testing.T) {
 	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
@@ -84,115 +87,115 @@ func TestNeo4j_Initialize(t *testing.T) {
 // 		}
 // }
 
-// func TestNewUser_usernameTemplate(t *testing.T) {
-// 	type testCase struct {
-// 		usernameTemplate string
+func TestNewUser_usernameTemplate(t *testing.T) {
+	type testCase struct {
+		usernameTemplate string
 
-// 		newUserReq            dbplugin.NewUserRequest
-// 		expectedUsernameRegex string
-// 	}
+		newUserReq            dbplugin.NewUserRequest
+		expectedUsernameRegex string
+	}
 
-// 	tests := map[string]testCase{
-// 		"default username template": {
-// 			usernameTemplate: "",
+	tests := map[string]testCase{
+		"default username template": {
+			usernameTemplate: "",
 
-// 			newUserReq: dbplugin.NewUserRequest{
-// 				UsernameConfig: dbplugin.UsernameMetadata{
-// 					DisplayName: "token",
-// 					RoleName:    "testrolenamewithmanycharacters",
-// 				},
-// 				Statements: dbplugin.Statements{
-// 					Commands: []string{mongoAdminRole},
-// 				},
-// 				Password:   "98yq3thgnakjsfhjkl",
-// 				Expiration: time.Now().Add(time.Minute),
-// 			},
+			newUserReq: dbplugin.NewUserRequest{
+				UsernameConfig: dbplugin.UsernameMetadata{
+					DisplayName: "token",
+					RoleName:    "testrolenamewithmanycharacters",
+				},
+				Statements: dbplugin.Statements{
+					Commands: []string{neo4jAdminRole},
+				},
+				Password:   "98yq3thgnakjsfhjkl",
+				Expiration: time.Now().Add(time.Minute),
+			},
 
-// 			expectedUsernameRegex: "^v-token-testrolenamewit-[a-zA-Z0-9]{20}-[0-9]{10}$",
-// 		},
-// 		"default username template with invalid chars": {
-// 			usernameTemplate: "",
+			expectedUsernameRegex: "^v-token-testrolenamewit-[a-zA-Z0-9]{20}-[0-9]{10}$",
+		},
+		"default username template with invalid chars": {
+			usernameTemplate: "",
 
-// 			newUserReq: dbplugin.NewUserRequest{
-// 				UsernameConfig: dbplugin.UsernameMetadata{
-// 					DisplayName: "a.bad.account",
-// 					RoleName:    "a.bad.role",
-// 				},
-// 				Statements: dbplugin.Statements{
-// 					Commands: []string{mongoAdminRole},
-// 				},
-// 				Password:   "98yq3thgnakjsfhjkl",
-// 				Expiration: time.Now().Add(time.Minute),
-// 			},
+			newUserReq: dbplugin.NewUserRequest{
+				UsernameConfig: dbplugin.UsernameMetadata{
+					DisplayName: "a.bad.account",
+					RoleName:    "a.bad.role",
+				},
+				Statements: dbplugin.Statements{
+					Commands: []string{neo4jAdminRole},
+				},
+				Password:   "98yq3thgnakjsfhjkl",
+				Expiration: time.Now().Add(time.Minute),
+			},
 
-// 			expectedUsernameRegex: "^v-a-bad-account-a-bad-role-[a-zA-Z0-9]{20}-[0-9]{10}$",
-// 		},
-// 		"custom username template": {
-// 			usernameTemplate: "{{random 2 | uppercase}}_{{unix_time}}_{{.RoleName | uppercase}}_{{.DisplayName | uppercase}}",
+			expectedUsernameRegex: "^v-a-bad-account-a-bad-role-[a-zA-Z0-9]{20}-[0-9]{10}$",
+		},
+		"custom username template": {
+			usernameTemplate: "{{random 2 | uppercase}}_{{unix_time}}_{{.RoleName | uppercase}}_{{.DisplayName | uppercase}}",
 
-// 			newUserReq: dbplugin.NewUserRequest{
-// 				UsernameConfig: dbplugin.UsernameMetadata{
-// 					DisplayName: "token",
-// 					RoleName:    "testrolenamewithmanycharacters",
-// 				},
-// 				Statements: dbplugin.Statements{
-// 					Commands: []string{mongoAdminRole},
-// 				},
-// 				Password:   "98yq3thgnakjsfhjkl",
-// 				Expiration: time.Now().Add(time.Minute),
-// 			},
+			newUserReq: dbplugin.NewUserRequest{
+				UsernameConfig: dbplugin.UsernameMetadata{
+					DisplayName: "token",
+					RoleName:    "testrolenamewithmanycharacters",
+				},
+				Statements: dbplugin.Statements{
+					Commands: []string{neo4jAdminRole},
+				},
+				Password:   "98yq3thgnakjsfhjkl",
+				Expiration: time.Now().Add(time.Minute),
+			},
 
-// 			expectedUsernameRegex: "^[A-Z0-9]{2}_[0-9]{10}_TESTROLENAMEWITHMANYCHARACTERS_TOKEN$",
-// 		},
-// 		"admin in test database username template": {
-// 			usernameTemplate: "",
+			expectedUsernameRegex: "^[A-Z0-9]{2}_[0-9]{10}_TESTROLENAMEWITHMANYCHARACTERS_TOKEN$",
+		},
+		"admin in test database username template": {
+			usernameTemplate: "",
 
-// 			newUserReq: dbplugin.NewUserRequest{
-// 				UsernameConfig: dbplugin.UsernameMetadata{
-// 					DisplayName: "token",
-// 					RoleName:    "testrolenamewithmanycharacters",
-// 				},
-// 				Statements: dbplugin.Statements{
-// 					Commands: []string{mongoTestDBAdminRole},
-// 				},
-// 				Password:   "98yq3thgnakjsfhjkl",
-// 				Expiration: time.Now().Add(time.Minute),
-// 			},
+			newUserReq: dbplugin.NewUserRequest{
+				UsernameConfig: dbplugin.UsernameMetadata{
+					DisplayName: "token",
+					RoleName:    "testrolenamewithmanycharacters",
+				},
+				Statements: dbplugin.Statements{
+					Commands: []string{neo4jTestDBAdminRole},
+				},
+				Password:   "98yq3thgnakjsfhjkl",
+				Expiration: time.Now().Add(time.Minute),
+			},
 
-// 			expectedUsernameRegex: "^v-token-testrolenamewit-[a-zA-Z0-9]{20}-[0-9]{10}$",
-// 		},
-// 	}
+			expectedUsernameRegex: "^v-token-testrolenamewit-[a-zA-Z0-9]{20}-[0-9]{10}$",
+		},
+	}
 
-// 	for name, test := range tests {
-// 		t.Run(name, func(t *testing.T) {
-// 			cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
-// 			defer cleanup()
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+			defer cleanup()
 
-// 			if name == "admin in test database username template" {
-// 				connURL = connURL + "/test?authSource=test"
-// 			}
+			if name == "admin in test database username template" {
+				connURL = connURL + "/test?authSource=test"
+			}
 
-// 			db := new()
-// 			defer dbtesting.AssertClose(t, db)
+			db := new()
+			defer dbtesting.AssertClose(t, db)
 
-// 			initReq := dbplugin.InitializeRequest{
-// 				Config: map[string]interface{}{
-// 					"connection_url":    connURL,
-// 					"username_template": test.usernameTemplate,
-// 				},
-// 				VerifyConnection: true,
-// 			}
-// 			dbtesting.AssertInitialize(t, db, initReq)
+			initReq := dbplugin.InitializeRequest{
+				Config: map[string]interface{}{
+					"connection_url":    connURL,
+					"username_template": test.usernameTemplate,
+				},
+				VerifyConnection: true,
+			}
+			dbtesting.AssertInitialize(t, db, initReq)
 
-// 			ctx := context.Background()
-// 			newUserResp, err := db.NewUser(ctx, test.newUserReq)
-// 			require.NoError(t, err)
-// 			require.Regexp(t, test.expectedUsernameRegex, newUserResp.Username)
+			ctx := context.Background()
+			newUserResp, err := db.NewUser(ctx, test.newUserReq)
+			require.NoError(t, err)
+			require.Regexp(t, test.expectedUsernameRegex, newUserResp.Username)
 
-// 			assertCredsExist(t, newUserResp.Username, test.newUserReq.Password, connURL)
-// 		})
-// 	}
-// }
+			// assertCredsExist(t, newUserResp.Username, test.newUserReq.Password, connURL)
+		})
+	}
+}
 
 // func TestMongoDB_CreateUser(t *testing.T) {
 // 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")

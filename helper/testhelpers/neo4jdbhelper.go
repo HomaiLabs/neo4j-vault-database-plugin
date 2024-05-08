@@ -40,7 +40,7 @@ func PrepareTestContainerWithDatabase(t *testing.T, version, dbName string) (fun
 	}
 
 	svc, err := runner.StartService(context.Background(), func(ctx context.Context, host string, port int) (docker.ServiceConfig, error) {
-		connURL := fmt.Sprintf("bolt://%s:%d", host, port)
+		connURL := fmt.Sprintf("neo4j://%s:%d", host, port)
 		if dbName != "" {
 			connURL = fmt.Sprintf("%s/%s", connURL, dbName)
 		}
