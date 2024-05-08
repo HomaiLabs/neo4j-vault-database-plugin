@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/HomaiLabs/neo4j-vault-database-plugin/neo4j"
 	"log"
-	"github.com/HomaiLabs/neo4j-vault-database-plugin/neo4j"	
 	"os"
 
-	dbplugin "github.com/hashicorp/vault/sdk/database/dbplugin/v5"	
+	dbplugin "github.com/hashicorp/vault/sdk/database/dbplugin/v5"
 )
 
 func main() {
@@ -22,4 +22,3 @@ func Run() error {
 
 	return nil
 }
-

@@ -40,10 +40,9 @@ func TestNeo4j_Initialize(t *testing.T) {
 
 	config := map[string]interface{}{
 		"connection_url": connURL,
-		"username": neo4j.Neo4jUsername,
-		"password": neo4j.Neo4jPassword,
+		"username":       neo4j.Neo4jUsername,
+		"password":       neo4j.Neo4jPassword,
 	}
-	
 
 	// // Make a copy since the original map could be modified by the Initialize call
 	expectedConfig := copyConfig(config)
@@ -63,7 +62,6 @@ func TestNeo4j_Initialize(t *testing.T) {
 		t.Fatal("Database should be initialized")
 	}
 }
-
 
 func TestNewUser_usernameTemplate(t *testing.T) {
 	type testCase struct {
@@ -149,15 +147,14 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 			cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
 			defer cleanup()
 
-
 			db := new()
 			defer dbtesting.AssertClose(t, db)
 
 			initReq := dbplugin.InitializeRequest{
 				Config: map[string]interface{}{
 					"connection_url":    connURL,
-					"username": neo4j.Neo4jUsername,
-					"password": neo4j.Neo4jPassword,
+					"username":          neo4j.Neo4jUsername,
+					"password":          neo4j.Neo4jPassword,
 					"username_template": test.usernameTemplate,
 				},
 				VerifyConnection: true,
@@ -188,8 +185,8 @@ func TestNeo4j_CreateUser(t *testing.T) {
 	initReq := dbplugin.InitializeRequest{
 		Config: map[string]interface{}{
 			"connection_url": connURL,
-			"username": neo4j.Neo4jUsername,
-			"password": neo4j.Neo4jPassword,
+			"username":       neo4j.Neo4jUsername,
+			"password":       neo4j.Neo4jPassword,
 		},
 		VerifyConnection: true,
 	}
@@ -203,7 +200,6 @@ func TestNeo4j_CreateUser(t *testing.T) {
 	}
 }
 
-
 func TestNeo4j_DeleteUser(t *testing.T) {
 	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
 	defer cleanup()
@@ -214,8 +210,8 @@ func TestNeo4j_DeleteUser(t *testing.T) {
 	initReq := dbplugin.InitializeRequest{
 		Config: map[string]interface{}{
 			"connection_url": connURL,
-			"username": neo4j.Neo4jUsername,
-			"password": neo4j.Neo4jPassword,
+			"username":       neo4j.Neo4jUsername,
+			"password":       neo4j.Neo4jPassword,
 		},
 		VerifyConnection: true,
 	}
@@ -244,15 +240,14 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
 	defer cleanup()
 
-	
 	db := new()
 	defer dbtesting.AssertClose(t, db)
 
 	initReq := dbplugin.InitializeRequest{
 		Config: map[string]interface{}{
 			"connection_url": connURL,
-			"username": neo4j.Neo4jUsername,
-			"password": neo4j.Neo4jPassword,
+			"username":       neo4j.Neo4jUsername,
+			"password":       neo4j.Neo4jPassword,
 		},
 		VerifyConnection: true,
 	}
@@ -282,8 +277,7 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 	}
 }
 
-
-// TODO uncomment this test 
+// TODO uncomment this test
 
 // func TestGetTLSAuth(t *testing.T) {
 // 	ca := certhelpers.NewCert(t,
@@ -404,9 +398,7 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 // }
 
 func createDBUser(t *testing.T, db *Neo4j, username string, password string) dbplugin.NewUserResponse {
-	
 
-	
 	createReq := dbplugin.NewUserRequest{
 		UsernameConfig: dbplugin.UsernameMetadata{
 			DisplayName: username,
@@ -422,21 +414,19 @@ func createDBUser(t *testing.T, db *Neo4j, username string, password string) dbp
 	return createResp
 }
 
-func assertCredsExist(t testing.TB, username, password, connURL string) error{
+func assertCredsExist(t testing.TB, username, password, connURL string) error {
 	t.Helper()
 
-	
 	var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
-	
+
 	client, err := neo4jDB.NewDriverWithContext(connURL, neo4jDB.BasicAuth(username, password, ""))
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	
 	err = client.VerifyConnectivity(ctx)
-	
+
 	if err != nil {
 		_ = client.Close(ctx) // Try to prevent any sort of resource leak
 		return err
@@ -451,18 +441,16 @@ func assertCredsExist(t testing.TB, username, password, connURL string) error{
 func assertCredsDoNotExist(t testing.TB, username, password, connURL string) error {
 	t.Helper()
 
-	
 	var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
-	
+
 	client, err := neo4jDB.NewDriverWithContext(connURL, neo4jDB.BasicAuth(username, password, ""))
 
 	if err != nil {
 		t.Error(err.Error())
 	}
 
-	
 	err = client.VerifyConnectivity(ctx)
-	
+
 	if err != nil {
 		_ = client.Close(ctx) // Try to prevent any sort of resource leak
 		return nil
