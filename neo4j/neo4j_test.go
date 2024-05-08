@@ -180,125 +180,96 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 	}
 }
 
-// func TestMongoDB_CreateUser(t *testing.T) {
-// 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
+func TestNeo4j_CreateUser(t *testing.T) {
+	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	defer cleanup()
+
+	db := new()
+	defer dbtesting.AssertClose(t, db)
+
+	initReq := dbplugin.InitializeRequest{
+		Config: map[string]interface{}{
+			"connection_url": connURL,
+			"username": neo4j.Neo4jUsername,
+			"password": neo4j.Neo4jPassword,
+		},
+		VerifyConnection: true,
+	}
+	dbtesting.AssertInitialize(t, db, initReq)
+
+	password := "myreallysecurepassword"
+	createReq := dbplugin.NewUserRequest{
+		UsernameConfig: dbplugin.UsernameMetadata{
+			DisplayName: "test",
+			RoleName:    "test",
+		},
+		Statements: dbplugin.Statements{
+			Commands: []string{neo4jAdminRole},
+		},
+		Password:   password,
+		Expiration: time.Now().Add(time.Minute),
+	}
+	createResp := dbtesting.AssertNewUser(t, db, createReq)
+
+	assertCredsExist(t, createResp.Username, password, connURL)
+}
+
+
+func TestNeo4j_DeleteUser(t *testing.T) {
+	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	defer cleanup()
+
+	db := new()
+	defer dbtesting.AssertClose(t, db)
+
+	initReq := dbplugin.InitializeRequest{
+		Config: map[string]interface{}{
+			"connection_url": connURL,
+			"username": neo4j.Neo4jUsername,
+			"password": neo4j.Neo4jPassword,
+		},
+		VerifyConnection: true,
+	}
+	dbtesting.AssertInitialize(t, db, initReq)
+
+	password := "myreallysecurepassword"
+	createReq := dbplugin.NewUserRequest{
+		UsernameConfig: dbplugin.UsernameMetadata{
+			DisplayName: "test",
+			RoleName:    "test",
+		},
+		Statements: dbplugin.Statements{
+			Commands: []string{neo4jAdminRole},
+		},
+		Password:   password,
+		Expiration: time.Now().Add(time.Minute),
+	}
+	createResp := dbtesting.AssertNewUser(t, db, createReq)
+	assertCredsExist(t, createResp.Username, password, connURL)
+
+	// Test default revocation statement
+	delReq := dbplugin.DeleteUserRequest{
+		Username: createResp.Username,
+	}
+
+	dbtesting.AssertDeleteUser(t, db, delReq)
+
+	assertCredsDoNotExist(t, createResp.Username, password, connURL)
+}
+
+// func TestNeo4j_UpdateUser_Password(t *testing.T) {
+// 	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
 // 	defer cleanup()
 
+	
 // 	db := new()
 // 	defer dbtesting.AssertClose(t, db)
 
 // 	initReq := dbplugin.InitializeRequest{
 // 		Config: map[string]interface{}{
 // 			"connection_url": connURL,
-// 		},
-// 		VerifyConnection: true,
-// 	}
-// 	dbtesting.AssertInitialize(t, db, initReq)
-
-// 	password := "myreallysecurepassword"
-// 	createReq := dbplugin.NewUserRequest{
-// 		UsernameConfig: dbplugin.UsernameMetadata{
-// 			DisplayName: "test",
-// 			RoleName:    "test",
-// 		},
-// 		Statements: dbplugin.Statements{
-// 			Commands: []string{mongoAdminRole},
-// 		},
-// 		Password:   password,
-// 		Expiration: time.Now().Add(time.Minute),
-// 	}
-// 	createResp := dbtesting.AssertNewUser(t, db, createReq)
-
-// 	assertCredsExist(t, createResp.Username, password, connURL)
-// }
-
-// func TestMongoDB_CreateUser_writeConcern(t *testing.T) {
-// 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
-// 	defer cleanup()
-
-// 	initReq := dbplugin.InitializeRequest{
-// 		Config: map[string]interface{}{
-// 			"connection_url": connURL,
-// 			"write_concern":  `{ "wmode": "majority", "wtimeout": 5000 }`,
-// 		},
-// 		VerifyConnection: true,
-// 	}
-
-// 	db := new()
-// 	defer dbtesting.AssertClose(t, db)
-
-// 	dbtesting.AssertInitialize(t, db, initReq)
-
-// 	password := "myreallysecurepassword"
-// 	createReq := dbplugin.NewUserRequest{
-// 		UsernameConfig: dbplugin.UsernameMetadata{
-// 			DisplayName: "test",
-// 			RoleName:    "test",
-// 		},
-// 		Statements: dbplugin.Statements{
-// 			Commands: []string{mongoAdminRole},
-// 		},
-// 		Password:   password,
-// 		Expiration: time.Now().Add(time.Minute),
-// 	}
-// 	createResp := dbtesting.AssertNewUser(t, db, createReq)
-
-// 	assertCredsExist(t, createResp.Username, password, connURL)
-// }
-
-// func TestMongoDB_DeleteUser(t *testing.T) {
-// 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
-// 	defer cleanup()
-
-// 	db := new()
-// 	defer dbtesting.AssertClose(t, db)
-
-// 	initReq := dbplugin.InitializeRequest{
-// 		Config: map[string]interface{}{
-// 			"connection_url": connURL,
-// 		},
-// 		VerifyConnection: true,
-// 	}
-// 	dbtesting.AssertInitialize(t, db, initReq)
-
-// 	password := "myreallysecurepassword"
-// 	createReq := dbplugin.NewUserRequest{
-// 		UsernameConfig: dbplugin.UsernameMetadata{
-// 			DisplayName: "test",
-// 			RoleName:    "test",
-// 		},
-// 		Statements: dbplugin.Statements{
-// 			Commands: []string{mongoAdminRole},
-// 		},
-// 		Password:   password,
-// 		Expiration: time.Now().Add(time.Minute),
-// 	}
-// 	createResp := dbtesting.AssertNewUser(t, db, createReq)
-// 	assertCredsExist(t, createResp.Username, password, connURL)
-
-// 	// Test default revocation statement
-// 	delReq := dbplugin.DeleteUserRequest{
-// 		Username: createResp.Username,
-// 	}
-
-// 	dbtesting.AssertDeleteUser(t, db, delReq)
-
-// 	assertCredsDoNotExist(t, createResp.Username, password, connURL)
-// }
-
-// func TestMongoDB_UpdateUser_Password(t *testing.T) {
-// 	cleanup, connURL := mongodb.PrepareTestContainer(t, "latest")
-// 	defer cleanup()
-
-// 	// The docker test method PrepareTestContainer defaults to a database "test"
-// 	// if none is provided
-// 	connURL = connURL + "/test"
-// 	db := new()
-// 	defer dbtesting.AssertClose(t, db)
-
-// 	initReq := dbplugin.InitializeRequest{
-// 		Config: map[string]interface{}{
-// 			"connection_url": connURL,
+// 			"username": neo4j.Neo4jUsername,
+// 			"password": neo4j.Neo4jPassword,
 // 		},
 // 		VerifyConnection: true,
 // 	}
@@ -476,10 +447,12 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 // func createDBUser(t testing.TB, connURL, db, username, password string) {
 // 	t.Helper()
 
-// 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-// 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connURL))
+// 	var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
+	
+// 	client, err := neo4jDB.NewDriverWithContext(connURL, neo4jDB.BasicAuth(username, password, ""))
+
 // 	if err != nil {
-// 		t.Fatal(err)
+// 		t.Error(err.Error())
 // 	}
 
 // 	createUserCmd := &createUserCommand{
@@ -487,7 +460,7 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 // 		Password: password,
 // 		Roles:    []interface{}{},
 // 	}
-// 	result := client.Database(db).RunCommand(ctx, createUserCmd, nil)
+// 	result := client..ExecuteWrite() RunCommand(ctx, createUserCmd, nil)
 // 	if result.Err() != nil {
 // 		t.Fatalf("failed to create user in mongodb: %s", result.Err())
 // 	}
@@ -521,23 +494,48 @@ func assertCredsExist(t testing.TB, username, password, connURL string) error{
 	return nil
 }
 
-// func assertCredsDoNotExist(t testing.TB, username, password, connURL string) {
-// 	t.Helper()
+func assertCredsDoNotExist(t testing.TB, username, password, connURL string) error {
+	// t.Helper()
 
-// 	connURL = strings.Replace(connURL, "mongodb://", fmt.Sprintf("mongodb://%s:%s@", username, password), 1)
+	// connURL = strings.Replace(connURL, "mongodb://", fmt.Sprintf("mongodb://%s:%s@", username, password), 1)
 
-// 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-// 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connURL))
-// 	if err != nil {
-// 		return // Creds don't exist as expected
-// 	}
+	// ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	// client, err := mongo.Connect(ctx, options.Client().ApplyURI(connURL))
+	// if err != nil {
+	// 	return // Creds don't exist as expected
+	// }
 
-// 	err = client.Ping(ctx, readpref.Primary())
-// 	if err != nil {
-// 		return // Creds don't exist as expected
-// 	}
-// 	t.Fatalf("User %q exists and was able to authenticate", username)
-// }
+	// err = client.Ping(ctx, readpref.Primary())
+	// if err != nil {
+	// 	return // Creds don't exist as expected
+	// }
+	// 
+	t.Helper()
+
+	
+	var ctx, _ = context.WithTimeout(context.Background(), 1*time.Minute)
+	
+	client, err := neo4jDB.NewDriverWithContext(connURL, neo4jDB.BasicAuth(username, password, ""))
+
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	
+	err = client.VerifyConnectivity(ctx)
+	
+	if err != nil {
+		_ = client.Close(ctx) // Try to prevent any sort of resource leak
+		return nil
+	}
+
+	if err = client.Close(ctx); err != nil {
+		return err
+	}
+
+	t.Fatalf("User %q exists and was able to authenticate", username)
+	return nil
+}
 
 func copyConfig(config map[string]interface{}) map[string]interface{} {
 	newConfig := map[string]interface{}{}
