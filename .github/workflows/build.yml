@@ -19,4 +19,8 @@ jobs:
           go install github.com/mitchellh/gox@latest
       - name: Test
         run: |
-          go test ./neo4j    
+          go test ./neo4j
+      - name: Build Docker Image
+        if: ${{ github.ref != 'ref/heads/main' }}
+        run: |
+             make docker-build
