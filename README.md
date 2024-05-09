@@ -1,12 +1,12 @@
 # Neo4j HashiCorp Vault Plugin
 This vault database plugin implements the [V5 version of Vault database plugin](https://developer.hashicorp.com/vault/docs/secrets/databases/custom)  to support Neo4j.
 
-This project also offers a Docker image which has the Neo4j plugin pregonfigred so that it is ready to use.
+This project also offers a Docker image which has the Neo4j plugin preconfigured so that it is ready to use.
 This code is heavily borrowed from the [MongoDB implementation of the plugin] (https://github.com/hashicorp/vault/tree/main/plugins/database/mongodb).
 
 It's also worth mentioning there already exists another implementation of [this plugin for Neo4j](https://github.com/vivacitylabs/vault-plugin-database-neo4j) but it's based on the older version of the plugin and I was not able to get it to work with the new vault server.  
 
-## Ruild
+## Build
 to build this project locally you can run (you need to have [Go](https://go.dev/doc/install and [gox](https://github.com/mitchellh/gox) installed)
 
 ```sh
@@ -118,7 +118,7 @@ username           v-root-my-role-2GpVgz6BG6LUQhe80sg3-1715236001
 
 ## Rotating the root password
 You can actually rotate the Neo4j root password via the following command.
-:warning: Please note after this you will not be able to read this password and only vault knows the root database password. As a result it's sugggested to use a separated password for vault than the root password.
+:warning: Please note after this you will not be able to read this password and only vault knows the root database password. As a result it's suggested to use a separated password for vault than the root password.
 
 ```
 vault write -force database/rotate-root/my-neo4j-database    
