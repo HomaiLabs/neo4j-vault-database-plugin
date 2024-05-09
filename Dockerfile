@@ -18,6 +18,7 @@ COPY --from=builder /build/neo4j-sha256.txt .
 COPY scripts/register_plugin.sh .
 RUN chmod +x neo4j-vault-database-plugin
 RUN chmod +x register_plugin.sh
-ENV VAULT_LOCAL_CONFIG='{"plugin_directory": "/plugins"}'
+# ENV VAULT_LOCAL_CONFIG='{"plugin_directory": "/plugins"}'
+ENV VAULT_LOCAL_CONFIG='{"storage": {"file": {"path": "/vault/file"}}, "listener": [{"tcp": { "address": "0.0.0.0:8200", "tls_disable": true}}], "default_lease_ttl": "168h", "max_lease_ttl": "720h", "ui": true, "plugin_directory": "/plugins"}'
 ENV VAULT_LOG_LEVEL=trace
 ENV VAULT_ADDR='http://0.0.0.0:8200'
