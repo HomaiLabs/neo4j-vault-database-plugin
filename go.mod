@@ -7,6 +7,7 @@ require (
 	github.com/hashicorp/vault/sdk v0.12.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/neo4j/neo4j-go-driver/v5 v5.19.0
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
@@ -86,7 +87,6 @@ require (
 	github.com/sasha-s/go-deadlock v0.2.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.47.0 // indirect
 	go.opentelemetry.io/otel v1.26.0 // indirect

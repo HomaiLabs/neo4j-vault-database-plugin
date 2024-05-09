@@ -18,7 +18,7 @@ import (
 	// "github.com/google/go-cmp/cmp"
 	// "github.com/google/go-cmp/cmp/cmpopts"
 	// "github.com/hashicorp/vault/helper/testhelpers/certhelpers"
-	"github.com/HomaiLabs/neo4j-vault-database-plugin/helper/testhelpers"
+	testhelpers "github.com/HomaiLabs/neo4j-vault-database-plugin/neo4j/helper/testhelpers"
 	dbplugin "github.com/hashicorp/vault/sdk/database/dbplugin/v5"
 	dbtesting "github.com/hashicorp/vault/sdk/database/dbplugin/v5/testing"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ const (
 )
 
 func TestNeo4j_Initialize(t *testing.T) {
-	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	cleanup, connURL := testhelpers.PrepareTestContainer(t, "latest")
 	defer cleanup()
 
 	db := new()
@@ -40,8 +40,8 @@ func TestNeo4j_Initialize(t *testing.T) {
 
 	config := map[string]interface{}{
 		"connection_url": connURL,
-		"username":       neo4j.Neo4jUsername,
-		"password":       neo4j.Neo4jPassword,
+		"username":       testhelpers.Neo4jUsername,
+		"password":       testhelpers.Neo4jPassword,
 	}
 
 	// // Make a copy since the original map could be modified by the Initialize call
@@ -144,7 +144,7 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+			cleanup, connURL := testhelpers.PrepareTestContainer(t, "latest")
 			defer cleanup()
 
 			db := new()
@@ -153,8 +153,8 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 			initReq := dbplugin.InitializeRequest{
 				Config: map[string]interface{}{
 					"connection_url":    connURL,
-					"username":          neo4j.Neo4jUsername,
-					"password":          neo4j.Neo4jPassword,
+					"username":          testhelpers.Neo4jUsername,
+					"password":          testhelpers.Neo4jPassword,
 					"username_template": test.usernameTemplate,
 				},
 				VerifyConnection: true,
@@ -176,7 +176,7 @@ func TestNewUser_usernameTemplate(t *testing.T) {
 }
 
 func TestNeo4j_CreateUser(t *testing.T) {
-	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	cleanup, connURL := testhelpers.PrepareTestContainer(t, "latest")
 	defer cleanup()
 
 	db := new()
@@ -185,8 +185,8 @@ func TestNeo4j_CreateUser(t *testing.T) {
 	initReq := dbplugin.InitializeRequest{
 		Config: map[string]interface{}{
 			"connection_url": connURL,
-			"username":       neo4j.Neo4jUsername,
-			"password":       neo4j.Neo4jPassword,
+			"username":       testhelpers.Neo4jUsername,
+			"password":       testhelpers.Neo4jPassword,
 		},
 		VerifyConnection: true,
 	}
@@ -201,7 +201,7 @@ func TestNeo4j_CreateUser(t *testing.T) {
 }
 
 func TestNeo4j_DeleteUser(t *testing.T) {
-	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	cleanup, connURL := testhelpers.PrepareTestContainer(t, "latest")
 	defer cleanup()
 
 	db := new()
@@ -210,8 +210,8 @@ func TestNeo4j_DeleteUser(t *testing.T) {
 	initReq := dbplugin.InitializeRequest{
 		Config: map[string]interface{}{
 			"connection_url": connURL,
-			"username":       neo4j.Neo4jUsername,
-			"password":       neo4j.Neo4jPassword,
+			"username":       testhelpers.Neo4jUsername,
+			"password":       testhelpers.Neo4jPassword,
 		},
 		VerifyConnection: true,
 	}
@@ -237,7 +237,7 @@ func TestNeo4j_DeleteUser(t *testing.T) {
 }
 
 func TestNeo4j_UpdateUser_Password(t *testing.T) {
-	cleanup, connURL := neo4j.PrepareTestContainer(t, "latest")
+	cleanup, connURL := testhelpers.PrepareTestContainer(t, "latest")
 	defer cleanup()
 
 	db := new()
@@ -246,8 +246,8 @@ func TestNeo4j_UpdateUser_Password(t *testing.T) {
 	initReq := dbplugin.InitializeRequest{
 		Config: map[string]interface{}{
 			"connection_url": connURL,
-			"username":       neo4j.Neo4jUsername,
-			"password":       neo4j.Neo4jPassword,
+			"username":       testhelpers.Neo4jUsername,
+			"password":       testhelpers.Neo4jPassword,
 		},
 		VerifyConnection: true,
 	}
