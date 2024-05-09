@@ -8,13 +8,14 @@ COPY ./ /build/
 RUN go install github.com/mitchellh/gox@latest
 ENV VAULT_DEV_BUILD=x
 RUN ./scripts/build.sh
-RUN sha256sum ./pkg/linux_arm64/neo4j-vault-database-plugin | cut -d' ' -f1 > neo4j-sha256.txt
+RUN ln -s "./pkg/linux_$(go env GOARCH)/neo4j-vault-database-plugin" ./neo4j-vault-database-plugin
+RUN sha256sum neo4j-vault-database-plugin | cut -d' ' -f1 > neo4j-sha256.txt
 
 
 FROM hashicorp/vault
 LABEL org.opencontainers.image.authors="dev@homai.io"
 WORKDIR /plugins
-COPY --from=builder /build/pkg/linux_arm64/neo4j-vault-database-plugin .
+COPY --from=builder /build/neo4j-vault-database-plugin .
 COPY --from=builder /build/neo4j-sha256.txt .
 COPY scripts/register_plugin.sh .
 RUN chmod +x neo4j-vault-database-plugin
