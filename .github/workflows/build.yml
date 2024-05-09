@@ -20,6 +20,16 @@ jobs:
       - name: Test
         run: |
           go test ./neo4j
+      - name: Version Number
+        env:
+           GITHUB_SHA: ${{ github.sha }}
+        run: |
+           GITDATE=$(git show -s --format=%ci)
+           DATE=$(date --date="$GITDATE" -u +"%Y%m%d")
+           HASH=$(git show -s --format=%h)
+           VERSION="$DATE.$HASH"
+           echo "BUILD_VERSION=$VERSION >> $GITHUB_ENV"
+           echo "Build version: $VERSION"       
       - name: Build Docker Image
         if: ${{ github.ref != 'ref/heads/main' }}
         run: |
