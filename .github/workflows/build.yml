@@ -33,4 +33,4 @@ jobs:
       - name: Build Docker Image
         if: ${{ github.ref != 'ref/heads/main' }}
         run: |
-             make docker-build
+             make docker-build make docker-build DOCKER_IMAGE_NAME=vault-neo4j:$VERSION
