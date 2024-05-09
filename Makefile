@@ -11,4 +11,7 @@ docker-run-server:
 	docker run --cap-add=IPC_LOCK  -p ${VAULT_PORT}:${VAULT_PORT} ${DOCKER_IMAGE_NAME} server
 
 build:
-	./scripts/build.sh	
+	./scripts/build.sh
+
+test:
+	go test ./neo4j

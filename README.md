@@ -35,6 +35,11 @@ or you can build the docker image via
 make docker-build
 ```
 
+to run tests
+```
+make test
+```
+
 ## Running [vault server]
 If you have the vault server installed you can copy the plugin into plugin directory or run the vault server and point the plugin directory accordingly
 
@@ -102,11 +107,14 @@ vault write database/roles/my-role \
 ```
 
 check if everything worked as expected
+
 ```sh
 vault read database/creds/my-role
 ```
+
 you should see something like
-```
+
+```sh
 Key                Value
 ---                -----
 lease_id           database/creds/my-role/7zFvHP1U4SKIYX8OcFNT3p25
@@ -118,8 +126,9 @@ username           v-root-my-role-2GpVgz6BG6LUQhe80sg3-1715236001
 
 ## Rotating the root password
 
-<p>You can actually rotate the Neo4j root password via the following command.<br>
-:warning: Please note after this you will not be able to read this password and only vault knows the root database password. As a result it's suggested to use a separated password for vault than the root password.</p>
+<p>You can actually rotate the Neo4j root password via the following command.</p>
+
+:warning: **Please note** after this you will **NOT** be able to read this password and only vault knows the root database password. As a result it's suggested to use a **separated** password for vault than the root password.
 
 ```
 vault write -force database/rotate-root/my-neo4j-database    
@@ -129,10 +138,4 @@ vault write -force database/rotate-root/my-neo4j-database
 ## Delete role
 ```sh
 vault delete database/config/my-neo4j-database
-``` 
-
-
-#### Warning
-
-
- :warning:  
+```   
