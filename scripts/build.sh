@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-TOOL=vault-plugin-database-neo4j
+TOOL=neo4j-vault-database-plugin
 
 #
 # This script builds the application from source for multiple platforms.
@@ -52,7 +52,7 @@ echo "==> Building..."
 export CGO_ENABLED=0
 gox \
     -osarch="${XC_OSARCH}" \
-    -ldflags "-X github.com/vivacitylabs/${TOOL}/version.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
+    -ldflags "-X https://github.com/HomaiLabs/${TOOL}/version.GitCommit='${GIT_COMMIT}${GIT_DIRTY}'" \
     -output "pkg/{{.OS}}_{{.Arch}}/${TOOL}" \
     .
 

@@ -1,12 +1,14 @@
-FROM golang:1.21 as builder
+FROM golang as builder
 LABEL org.opencontainers.image.authors="dev@homai.io"
+
+ 
 
 WORKDIR /build
 COPY neo4j /build
-COPY go.mod go.sum /build/ 
+COPY ./ /build/ 
 RUN go install github.com/mitchellh/gox@latest
-# RUN gox -output=./bin/neo4j-vault-database-plugin -verbose  ./...
-RUN go build -o ./bin/neo4j-vault-database-plugin ./...
+ENV VAULT_DEV_BUILD=x
+RUN ./scripts/build.sh
 RUN sha256sum ./bin/neo4j-vault-database-plugin | cut -d' ' -f1 > neo4j-sha256.txt
 
 

@@ -1,6 +1,6 @@
 DOCKER_IMAGE_NAME:=vault-neo4j
 
-docker-built:
+docker-build:
 	docker build . -t ${DOCKER_IMAGE_NAME}
 
 docker-run:
