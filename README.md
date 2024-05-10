@@ -2,12 +2,17 @@
 ![example workflow](https://github.com/HomaiLabs/neo4j-vault-database-plugin/actions/workflows/docker-build.yml/badge.svg)
 
 # Neo4j HashiCorp Vault Plugin
-This vault database plugin implements the [V5 version of Vault database plugin](https://developer.hashicorp.com/vault/docs/secrets/databases/custom)  to support Neo4j.
+<p>
 
-This project also offers a Docker image which has the Neo4j plugin preconfigured so that it is ready to use.
-This code is heavily borrowed from the [MongoDB implementation of the plugin](https://github.com/hashicorp/vault/tree/main/plugins/database/mongodb).
+:point_right: This vault database plugin implements the [V5 version of Vault database plugin](https://developer.hashicorp.com/vault/docs/secrets/databases/custom) to support Neo4j.<br>
 
-It's also worth mentioning there already exists another implementation of [this plugin for Neo4j](https://github.com/vivacitylabs/vault-plugin-database-neo4j) but it's based on the older version of the plugin and I was not able to get it to work with the new vault server.  
+:point_right: :whale: This project also offers a Docker image which has the Neo4j plugin preconfigured so that it is ready to use [dockerHub](https://hub.docker.com/r/homaidev/vaultneo4j). <br>
+
+:loudspeaker: This code is heavily borrowed from the [MongoDB implementation of the plugin](https://github.com/hashicorp/vault/tree/main/plugins/database/mongodb).
+
+:coffin: It's also worth mentioning there already exists another implementation of [this plugin for Neo4j](https://github.com/vivacitylabs/vault-plugin-database-neo4j) but it's based on the older version of the plugin and I was not able to get it to work with the new vault server.
+</p>
+
 
 ## Build
 to build this project locally you can run. You'll need to have [Go](https://go.dev/doc/install) and[gox](https://github.com/mitchellh/gox) installed.
@@ -62,7 +67,7 @@ if all goes well you should see an output similar to this in the logs:
 
 run the docker instance
 ```sh
-make docker-run
+ docker run --cap-add=IPC_LOCK -e 'VAULT_DEV_ROOT_TOKEN_ID=myroot' -e 'VAULT_DEV_LISTEN_ADDRESS=127.0.0.1:8300' -p 8200:8200 homaidev/vaultneo4j
 ```
 
 after that you need to register the plugin by hopping on the docker instance
@@ -73,8 +78,21 @@ vault login
 ./register_plugin.sh
 ```
 
+you should see an output like
+
+> Success! Data written to: sys/plugins/catalog/database/neo4j-vault-database-plugin
+
+verify the plugin is registered by running the following command
+
+```sh
+ vault plugin list | grep neo4j
+```
+and make sure you see the plugin listed. Here is an example output:
+
+> neo4j-vault-database-plugin          database    v1.0.0-beta
+
 ## Neo4j Vault Secret Engine
-In order to manage a Neo4j database credentials via vault first you would need to set the Neo4j admin credentials in vault.
+In order to manage a Neo4j database credentials via vault, first you would need to set the Neo4j admin credentials in vault.
 Let's assume you are running Neo4j on a docker instance.
 
 ```sh
