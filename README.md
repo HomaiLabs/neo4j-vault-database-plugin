@@ -1,3 +1,6 @@
+![example workflow](https://github.com/HomaiLabs/neo4j-vault-database-plugin/actions/workflows/build.yml/badge.svg)
+![example workflow](https://github.com/HomaiLabs/neo4j-vault-database-plugin/actions/workflows/docker-build.yml/badge.svg)
+
 # Neo4j HashiCorp Vault Plugin
 This vault database plugin implements the [V5 version of Vault database plugin](https://developer.hashicorp.com/vault/docs/secrets/databases/custom)  to support Neo4j.
 
