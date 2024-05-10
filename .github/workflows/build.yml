@@ -22,17 +22,7 @@ jobs:
           go get .
       - name: Test
         run: |
-          go test ./neo4j
-      - name: Version Number
-        env:
-           GITHUB_SHA: ${{ github.sha }}
-        run: |
-           GITDATE=$(git show -s --format=%ci)
-           DATE=$(date --date="$GITDATE" -u +"%Y%m%d")
-           HASH=$(git show -s --format=%h)
-           VERSION="$DATE.$HASH"
-           echo "BUILD_VERSION=$VERSION >> $GITHUB_ENV"
-           echo "Build version: $VERSION"       
+          go test ./neo4j      
       - name: Build Docker Image
         run: |
              make docker-build
